@@ -28,8 +28,35 @@ module.exports = class Cart {
       }
       cart.totalPrice = cart.totalPrice + +productPrice;
       fs.writeFile(filePath, JSON.stringify(cart), (err) => {
-        console.log("!!!!!!!!!!!!!!!!!", err);
+        console.log("[ERROR_TO_WRITE_FILE]", err);
       });
+    });
+  }
+
+  static deleteProduct(id, productPrice) {
+    fs.readFile(filePath, (err, fileContent) => {
+      if (err) return;
+      const updatedCart = { ...JSON.parse(fileContent) };
+      const product = updatedCart.products.find((product) => product.id === id);
+      if (!product) return;
+      const productQty = product.qty;
+
+      updatedCart.products = updatedCart.products.filter((product) => product.id !== id);
+      updatedCart.totalPrice = updatedCart.totalPrice - productPrice * productQty;
+      fs.writeFile(filePath, JSON.stringify(updatedCart), (err) => {
+        console.log("[ERROR_TO_WRITE_FILE]", err);
+      });
+    });
+  }
+
+  static getCart(callBackFunction) {
+    fs.readFile(filePath, (err, fileContent) => {
+      const cart = JSON.parse(fileContent);
+      if (err) {
+        callBackFunction(null);
+      } else {
+        callBackFunction(cart);
+      }
     });
   }
 };

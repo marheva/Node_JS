@@ -1,4 +1,15 @@
+const mongodb = require("mongodb");
 const Product = require("../models/product");
+
+exports.getProducts = (req, res, next) => {
+  Product.fetchAll().then((products) => {
+    res.render("admin/products", {
+      path: "/admin/products",
+      prods: products,
+      pageTitle: "Admin products",
+    });
+  });
+};
 
 exports.getAddProduct = (req, res, next) => {
   res.render("admin/edit-product", {
@@ -8,20 +19,6 @@ exports.getAddProduct = (req, res, next) => {
   });
 };
 
-exports.postAddProduct = (req, res, next) => {
-  const { title, imageURL, price, description } = req.body;
-  const product = new Product(null, title, imageURL, price, description);
-  product.save();
-  res.redirect("/");
-};
-
-exports.postEditProduct = (req, res, next) => {
-  const { productId, title, price, imageURL, description } = req.body;
-  const updatedProduct = new Product(productId, title, price, imageURL, description);
-  updatedProduct.save();
-  res.redirect("/admin/products");
-};
-
 exports.getEditProduct = (req, res, next) => {
   const editMode = req.query.edit === "true";
 
@@ -29,7 +26,8 @@ exports.getEditProduct = (req, res, next) => {
     return res.redirect("/");
   }
   const productById = req.params.productId;
-  Product.findById(productById, (product) => {
+
+  Product.findById(productById).then((product) => {
     if (!product) {
       return res.redirect("/");
     }
@@ -42,12 +40,27 @@ exports.getEditProduct = (req, res, next) => {
   });
 };
 
-exports.getProducts = (req, res, next) => {
-  Product.fetchAll((products) => {
-    res.render("admin/products", {
-      path: "/admin/products",
-      prods: products,
-      pageTitle: "Admin products",
-    });
+exports.postAddProduct = (req, res, next) => {
+  const { title, imageURL, price, description } = req.body;
+  const product = new Product(null, title, imageURL, price, description, req.user._id);
+  product
+    .save()
+    .then((result) => {
+      res.redirect("/admin/products");
+    })
+    .catch((error) => console.log(error));
+};
+
+exports.postEditProduct = (req, res, next) => {
+  const { productId, title, imageURL, price, description } = req.body;
+  const updatedProduct = new Product(mongodb.ObjectID(productId), title, imageURL, price, description);
+  updatedProduct.save();
+  res.redirect("/admin/products");
+};
+
+exports.postDeleteProduct = (req, res, next) => {
+  const productId = req.body.productId;
+  Product.deleteById(productId).then((result) => {
+    res.redirect("/admin/products");
   });
 };
