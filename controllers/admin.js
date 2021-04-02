@@ -1,8 +1,7 @@
-const mongodb = require("mongodb");
 const Product = require("../models/product");
 
 exports.getProducts = (req, res, next) => {
-  Product.fetchAll().then((products) => {
+  Product.find().then((products) => {
     res.render("admin/products", {
       path: "/admin/products",
       prods: products,
@@ -40,9 +39,18 @@ exports.getEditProduct = (req, res, next) => {
   });
 };
 
+// [POST]
+//
 exports.postAddProduct = (req, res, next) => {
   const { title, imageURL, price, description } = req.body;
-  const product = new Product(null, title, imageURL, price, description, req.user._id);
+  const product = new Product({
+    title: title,
+    imageURL: imageURL,
+    price: price,
+    description: description,
+    userId: req.user,
+  });
+
   product
     .save()
     .then((result) => {
@@ -53,14 +61,24 @@ exports.postAddProduct = (req, res, next) => {
 
 exports.postEditProduct = (req, res, next) => {
   const { productId, title, imageURL, price, description } = req.body;
-  const updatedProduct = new Product(mongodb.ObjectID(productId), title, imageURL, price, description);
-  updatedProduct.save();
-  res.redirect("/admin/products");
+  Product.findById(productId)
+    .then((product) => {
+      product.title = title;
+      product.imageURL = imageURL;
+      product.price = price;
+      product.description = description;
+      return product.save();
+    })
+    .then(() => {
+      console.log(`[PRODUCT ID:${productId} WAS EDITED]`);
+      res.redirect("/admin/products");
+    })
+    .catch((error) => console.log(`[PRODUCT ID:${productId} WAS NOT UPDATED], error message: ${error}`));
 };
 
 exports.postDeleteProduct = (req, res, next) => {
   const productId = req.body.productId;
-  Product.deleteById(productId).then((result) => {
+  Product.findByIdAndRemove(productId).then((result) => {
     res.redirect("/admin/products");
   });
 };

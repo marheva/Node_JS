@@ -1,9 +1,8 @@
 const path = require("path");
-
 const express = require("express");
 const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
 const { get404 } = require("./controllers/error");
-const { mongoConnect } = require("./util/database");
 const User = require("./models/user");
 
 // APP
@@ -23,9 +22,9 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use((req, res, next) => {
-  User.findById("6060716bf415b5a589b6b936")
+  User.findById("60671c30c13f9d1924330fd6")
     .then((user) => {
-      req.user = new User(user.name, user.email, user.cart, user._id);
+      req.user = user;
       next();
     })
     .catch((error) => console.log("[USER ERROR]", error));
@@ -36,9 +35,29 @@ app.use(shopRoutes);
 
 app.use(get404);
 
-const port = process.env.PORT || 8000;
+const port = process.env.PORT || 8080;
 const srv = process.env.MONGODB_SRV_ADDRESS;
-mongoConnect(srv, () => {
-  console.log(`The server is running on port ${port}`);
-  app.listen(port);
+
+mongoose.connect(srv, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
+  console.log("DB Connected");
+  User.findOne().then((user) => {
+    if (!user) {
+      const user = new User({
+        name: "Roman",
+        email: "markhevkaroman@gmail.com",
+        cart: {
+          items: [],
+        },
+      });
+      user.save();
+    }
+  });
+
+  app.listen(port, () => {
+    console.log(`The server is running on port ${port}`);
+  });
+});
+
+mongoose.connection.on("error", (err) => {
+  console.log(`DB connection error: ${err.message}`);
 });
