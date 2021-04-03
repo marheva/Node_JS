@@ -13,10 +13,6 @@ const userSchema = new Schema({
     type: String,
     required: true,
   },
-  priority: {
-    type: Number,
-    required: true,
-  },
   cart: {
     items: [
       {

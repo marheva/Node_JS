@@ -21,9 +21,14 @@
                             <h2 class="product__price">$19.99</h2>
                             <p class="product__description">A very interesting book about so many even more interesting things!</p>
                         </div>
-                        <%- include('../includes/add-to-cart.ejs', {
-                            product: product
-                        }) %>
+                       <div class="card__actions">
+                            <a href="/products/<%= product._id %>" class="btn">Details</a>
+                            <% if (isAuthenticated) { %>
+                                <%- include('../includes/add-to-cart.ejs', {
+                                    product: product
+                                }) %>
+                            <% } %>
+                        </div>
                     </article>
                 <% } %>
             </div>
