@@ -2,11 +2,24 @@ const path = require("path");
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const session = require("express-session");
+const mongoDBSession = require("connect-mongodb-session");
 const { get404 } = require("./controllers/error");
 const User = require("./models/user");
 
+require("dotenv").config();
+
+const APP_PORT = process.env.PORT || 8080;
+const MONDO_DB_URI = process.env.MONGODB_SRV_ADDRESS;
+const DB_SESSIONS_COLLECTION_NAME = "sessions";
+
 // APP
 const app = express();
+const mongoDBStore = mongoDBSession(session);
+const store = new mongoDBStore({
+  uri: MONDO_DB_URI,
+  collection: DB_SESSIONS_COLLECTION_NAME,
+});
 
 // EJX, PUG ...
 app.set("view engine", "ejs");
@@ -15,30 +28,31 @@ app.set("views", "views");
 // IMPORT ROUTES
 const aminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
-
-require("dotenv").config();
+const authRoutes = require("./routes/auth");
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
+app.use(session({ secret: "my secret", resave: false, saveUninitialized: false, store: store }));
 
 app.use((req, res, next) => {
-  User.findById("60671c30c13f9d1924330fd6")
+  if (!req.session.user) {
+    return next();
+  }
+  User.findById(req.session.user._id)
     .then((user) => {
       req.user = user;
       next();
     })
-    .catch((error) => console.log("[USER ERROR]", error));
+    .catch((err) => console.log(err));
 });
 
 app.use("/admin", aminRoutes);
 app.use(shopRoutes);
+app.use(authRoutes);
 
 app.use(get404);
 
-const port = process.env.PORT || 8080;
-const srv = process.env.MONGODB_SRV_ADDRESS;
-
-mongoose.connect(srv, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
+mongoose.connect(MONDO_DB_URI, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
   console.log("DB Connected");
   User.findOne().then((user) => {
     if (!user) {
@@ -53,8 +67,8 @@ mongoose.connect(srv, { useNewUrlParser: true, useUnifiedTopology: true }).then(
     }
   });
 
-  app.listen(port, () => {
-    console.log(`The server is running on port ${port}`);
+  app.listen(APP_PORT, () => {
+    console.log(`The server is running on port ${APP_PORT}`);
   });
 });
 

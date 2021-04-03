@@ -7,6 +7,7 @@ exports.getProducts = (req, res, next) => {
       path: "/products",
       prods: products,
       pageTitle: "All products",
+      isAuthenticated: req.session.isLoggedIn,
     });
   });
 };
@@ -17,6 +18,7 @@ exports.getIndex = (req, res, next) => {
       path: "/",
       prods: products,
       pageTitle: "Shop",
+      isAuthenticated: req.session.isLoggedIn,
     });
   });
 };
@@ -28,6 +30,7 @@ exports.getProductById = (req, res, next) => {
       path: "/products",
       product: product,
       pageTitle: product.title,
+      isAuthenticated: req.session.isLoggedIn,
     });
   });
 };
@@ -41,8 +44,32 @@ exports.getCart = (req, res, next) => {
         path: "/cart",
         pageTitle: "Your Cart",
         products: user.cart.items,
+        isAuthenticated: req.session.isLoggedIn,
       });
     });
+};
+
+exports.getCheckout = (req, res, next) => {
+  Product.fetchAll((products) => {
+    res.render("shop/checkout", {
+      path: "/checkout",
+      pageTitle: "Checkout",
+      isAuthenticated: req.session.isLoggedIn,
+    });
+  });
+};
+
+exports.getOrders = (req, res, next) => {
+  Order.find({ "user.userId": req.user._id })
+    .then((orders) => {
+      res.render("shop/orders", {
+        path: "/orders",
+        pageTitle: "Your Orders",
+        orders: orders,
+        isAuthenticated: req.session.isLoggedIn,
+      });
+    })
+    .catch((error) => console.log("[GET ORDERS ERROR]", error));
 };
 
 exports.postProductToCart = (req, res, next) => {
@@ -90,25 +117,4 @@ exports.postOrder = (req, res, next) => {
     .then(() => req.user.clearCart())
     .then(() => res.redirect("/orders"))
     .catch((error) => console.log("[POST ORDER ERROR]", error));
-};
-
-exports.getCheckout = (req, res, next) => {
-  Product.fetchAll((products) => {
-    res.render("shop/checkout", {
-      path: "/checkout",
-      pageTitle: "Checkout",
-    });
-  });
-};
-
-exports.getOrders = (req, res, next) => {
-  Order.find({ "user.userId": req.user._id })
-    .then((orders) => {
-      res.render("shop/orders", {
-        path: "/orders",
-        pageTitle: "Your Orders",
-        orders: orders,
-      });
-    })
-    .catch((error) => console.log("[GET ORDERS ERROR]", error));
 };
