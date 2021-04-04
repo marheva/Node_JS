@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const session = require("express-session");
 const mongoDBSession = require("connect-mongodb-session");
+
 const { get404 } = require("./controllers/error");
 const User = require("./models/user");
 
@@ -54,19 +55,6 @@ app.use(get404);
 
 mongoose.connect(MONDO_DB_URI, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
   console.log("DB Connected");
-  User.findOne().then((user) => {
-    if (!user) {
-      const user = new User({
-        name: "Roman",
-        email: "markhevkaroman@gmail.com",
-        cart: {
-          items: [],
-        },
-      });
-      user.save();
-    }
-  });
-
   app.listen(APP_PORT, () => {
     console.log(`The server is running on port ${APP_PORT}`);
   });

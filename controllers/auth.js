@@ -1,4 +1,7 @@
+const bcrypt = require("bcryptjs");
 const User = require("../models/user");
+
+const BT_SALT_ROUNDS = 12;
 
 exports.getLogin = (req, res, next) => {
   res.render("auth/login", {
@@ -8,15 +11,55 @@ exports.getLogin = (req, res, next) => {
   });
 };
 
+exports.getSignup = (req, res, next) => {
+  res.render("auth/signup", {
+    path: "/signup",
+    pageTitle: "Signup",
+    isAuthenticated: false,
+  });
+};
+
 exports.postLogin = (req, res, next) => {
-  User.findById("60671c30c13f9d1924330fd6")
+  const { email, password } = req.body;
+  User.findOne({ email: email })
     .then((user) => {
-      req.session.isLoggedIn = true;
-      req.session.user = user;
-      req.session.save(() => {
-        res.redirect("/");
-      });
+      if (!user) return res.redirect("/");
+      bcrypt
+        .compare(password, user.password)
+        .then((doMatch) => {
+          if (doMatch) {
+            req.session.isLoggedIn = true;
+            req.session.user = user;
+            return req.session.save(() => {
+              res.redirect("/");
+            });
+          }
+          return res.redirect("/login");
+        })
+        .catch((error) => res.redirect("/login"));
     })
+    .catch((error) => console.log(error));
+};
+
+exports.postSignup = (req, res, next) => {
+  const { name, email, password, confirmPassword } = req.body;
+  User.findOne({ email: email })
+    .then((userDocument) => {
+      if (userDocument) return res.redirect("/signup");
+      return bcrypt
+        .hash(password, BT_SALT_ROUNDS)
+        .then((hashedPassword) => {
+          const user = new User({
+            name: name,
+            email: email,
+            password: hashedPassword,
+            cart: { items: [] },
+          });
+          return user.save();
+        })
+        .then(() => res.redirect("/login"));
+    })
+
     .catch((error) => console.log(error));
 };
 
