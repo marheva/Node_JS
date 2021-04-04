@@ -4,6 +4,8 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const session = require("express-session");
 const mongoDBSession = require("connect-mongodb-session");
+const csrf = require("csurf");
+const flash = require("connect-flash");
 
 const { get404 } = require("./controllers/error");
 const User = require("./models/user");
@@ -21,6 +23,7 @@ const store = new mongoDBStore({
   uri: MONDO_DB_URI,
   collection: DB_SESSIONS_COLLECTION_NAME,
 });
+const csrfProtection = csrf();
 
 // EJX, PUG ...
 app.set("view engine", "ejs");
@@ -34,6 +37,8 @@ const authRoutes = require("./routes/auth");
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(session({ secret: "my secret", resave: false, saveUninitialized: false, store: store }));
+app.use(csrfProtection);
+app.use(flash());
 
 app.use((req, res, next) => {
   if (!req.session.user) {
@@ -47,10 +52,18 @@ app.use((req, res, next) => {
     .catch((err) => console.log(err));
 });
 
+// express local variables
+//
+app.use((req, res, next) => {
+  res.locals.isAuthenticated = req.session.isLoggedIn;
+  res.locals.csrfToken = req.csrfToken();
+  next();
+});
+
+// ROUTES
 app.use("/admin", aminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
-
 app.use(get404);
 
 mongoose.connect(MONDO_DB_URI, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {

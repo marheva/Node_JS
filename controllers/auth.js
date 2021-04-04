@@ -7,7 +7,6 @@ exports.getLogin = (req, res, next) => {
   res.render("auth/login", {
     path: "/login",
     pageTitle: "Login",
-    isAuthenticated: false,
   });
 };
 
@@ -15,7 +14,6 @@ exports.getSignup = (req, res, next) => {
   res.render("auth/signup", {
     path: "/signup",
     pageTitle: "Signup",
-    isAuthenticated: false,
   });
 };
 
@@ -23,7 +21,9 @@ exports.postLogin = (req, res, next) => {
   const { email, password } = req.body;
   User.findOne({ email: email })
     .then((user) => {
-      if (!user) return res.redirect("/");
+      if (!user) {
+        return res.redirect("/");
+      }
       bcrypt
         .compare(password, user.password)
         .then((doMatch) => {
