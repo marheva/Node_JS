@@ -11,6 +11,10 @@ const {
   postCartDeleteProduct,
 } = require("../controllers/shop");
 
+// MIDDLEWARE
+//
+const isAuth = require("../middleware/is-auth");
+
 const router = express.Router();
 
 // [PRODUCT]
@@ -18,11 +22,11 @@ router.get("/", getIndex);
 router.get("/products", getProducts);
 router.get("/products/:productId", getProductById);
 // [CART]
-router.get("/cart", getCart);
-router.post("/cart", postProductToCart);
-router.post("/cart-delete-item", postCartDeleteProduct);
+router.get("/cart", isAuth, getCart);
+router.post("/cart", isAuth, postProductToCart);
+router.post("/cart-delete-item", isAuth, postCartDeleteProduct);
 // [ORDER]
-router.post("/create-order", postOrder);
-router.get("/orders", getOrders);
+router.post("/create-order", isAuth, postOrder);
+router.get("/orders", isAuth, getOrders);
 
 module.exports = router;
